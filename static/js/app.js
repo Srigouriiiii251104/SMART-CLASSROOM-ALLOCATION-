@@ -366,7 +366,7 @@ function initAttendanceMarking() {
 
 function initQRGeneration() {
     const genBtn = document.getElementById("generateQrBtn");
-    const countdown = document.getElementById("qrCountdown");
+    let countdown = document.getElementById("qrCountdown");
     const studentBtn = document.querySelector("[data-attendance-mark='true']");
     if (!genBtn) return;
 

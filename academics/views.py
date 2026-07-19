@@ -113,7 +113,6 @@ class TimetableBoardView(LoginRequiredMixin, TemplateView):
                 "entries": weekly_schedule_map[day],
             }
             for day, label in TimeSlot.DAY_CHOICES
-            if weekly_schedule_map[day]
         ]
 
         context.update(

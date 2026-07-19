@@ -128,6 +128,8 @@
                                     <span>{{ entry.offering.course.title }}</span>
                                     <small>{{ entry.classroom.name|default:"Room TBA" }} · {{ entry.offering.faculty.display_name }}</small>
                                 </div>
+                            {% empty %}
+                                <p class="subtle-text p-2 mb-0 text-center">No classes scheduled</p>
                             {% endfor %}
                         </div>
                     </div>
