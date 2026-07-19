@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+
+{% block page_title %}Resource Management{% endblock %}
+{% block page_subtitle %}Track projectors, labs, speakers, smart boards, and other equipment in real time.{% endblock %}
+
+{% block content %}
+<div class="card-panel">
+    <div class="card-header-inline">
+        <div>
+            <h3>Inventory Overview</h3>
+            <p class="subtle-text">Portable and room-bound equipment availability.</p>
+        </div>
+        <div class="d-flex gap-2">
+            {% if user.role == 'admin' or user.role == 'faculty' %}
+                <a href="{% url 'resources:resource_add' %}" class="btn btn-primary">Add Resource</a>
+            {% endif %}
+            <a href="{% url 'resources:booking_add' %}" class="btn btn-outline-primary">Book Resource</a>
+            <a href="{% url 'resources:booking_list' %}" class="btn btn-outline-secondary">View Bookings</a>
+        </div>
+    </div>
+    <div class="table-responsive">
+        <table class="table align-middle">
+            <thead>
+                <tr>
+                    <th>Resource</th>
+                    <th>Category</th>
+                    <th>Room</th>
+                    <th>Qty</th>
+                    <th>Available</th>
+                    <th>Status</th>
+                    <th>Next Maintenance</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for resource in resources %}
+                    <tr>
+                        <td>{{ resource.name }}</td>
+                        <td>{{ resource.category.name }}</td>
+                        <td>{{ resource.classroom.name|default:'Portable' }}</td>
+                        <td>{{ resource.quantity }}</td>
+                        <td>{{ resource.available_quantity }}</td>
+                        <td>{{ resource.get_status_display }}</td>
+                        <td>{{ resource.next_maintenance_date|default:'Not scheduled' }}</td>
+                    </tr>
+                {% empty %}
+                    <tr><td colspan="7">No resources available yet.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

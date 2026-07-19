@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+
+{% block title %}Login | {{ app_name }}{% endblock %}
+{% block auth_content %}
+<section class="auth-shell">
+    <div class="auth-card">
+        <div class="auth-copy">
+            <p class="eyebrow">AI-Powered Campus Operations</p>
+            <h1>{{ app_name }}</h1>
+            <p>Manage smart classrooms, auto-generated timetables, exam halls, attendance, QR access, and analytics from one platform.</p>
+        </div>
+        <div class="auth-form">
+            <h2>Sign In</h2>
+            {% if form.non_field_errors %}
+                <div class="alert alert-danger">
+                    {% for error in form.non_field_errors %}
+                        <div>{{ error }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+            <div class="role-selector" data-role-selector data-target-input="{{ form.role.id_for_label }}">
+                <button type="button" class="role-selector-button" data-role-value="student">Login as Student</button>
+                <button type="button" class="role-selector-button" data-role-value="faculty">Login as Teacher</button>
+                <button type="button" class="role-selector-button" data-role-value="admin">Login as Admin</button>
+            </div>
+            <form method="post">
+                {% csrf_token %}
+                {{ form.role }}
+                {% for field in form %}
+                    {% if field.name != 'role' %}
+                        <div class="mb-3">
+                            <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                            {{ field }}
+                            {% for error in field.errors %}
+                                <div class="text-danger small">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                {% endfor %}
+                <button class="btn btn-primary w-100" type="submit">Login</button>
+            </form>
+            <div class="d-flex justify-content-between mt-3">
+                <a href="{% url 'accounts:signup' %}?role={{ selected_role }}">Sign up</a>
+                <a href="{% url 'password_reset' %}">Forgot password?</a>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

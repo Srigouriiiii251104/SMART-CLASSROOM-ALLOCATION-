@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+
+{% block page_title %}QR Analytics{% endblock %}
+{% block content %}
+<div class="card-panel">
+    <h3>QR Generation Analytics</h3>
+    <p class="subtle-text">Shows QR generation activity over time.</p>
+    <form method="get" class="row g-2 align-items-end">
+        <div class="col-auto">
+            <label>Start</label>
+            <input type="date" name="start_date" value="{{ start_date }}" class="form-control">
+        </div>
+        <div class="col-auto">
+            <label>End</label>
+            <input type="date" name="end_date" value="{{ end_date }}" class="form-control">
+        </div>
+        <div class="col-auto">
+            <button class="btn btn-outline-primary">Filter</button>
+        </div>
+    </form>
+    <canvas id="qrChart" style="height:200px;"></canvas>
+    <h4 class="mt-4">Top Sessions</h4>
+    <form method="post" class="mt-3">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="export_csv">
+        <input type="hidden" name="start_date" value="{{ start_date }}">
+        <input type="hidden" name="end_date" value="{{ end_date }}">
+        <button class="btn btn-outline-secondary btn-sm mb-3">Export CSV</button>
+    </form>
+
+    <table class="table">
+        <thead><tr><th>Course</th><th>Count</th></tr></thead>
+        <tbody>
+            {% for s in top_sessions %}
+                <tr>
+                    <td>{{ s.session__timetable_entry__offering__course__code|default:'Session' }}</td>
+                    <td>{{ s.count }}</td>
+                </tr>
+            {% empty %}
+                <tr><td colspan="2">No data available.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% block extra_js %}
+<script>
+(function(){
+    const daily = {{ daily|safe }};
+    const labels = daily.map(d => d.date);
+    const data = daily.map(d => d.count);
+    const ctx = document.getElementById('qrChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'bar',
+        data: { labels: labels, datasets: [{ label: 'QR generations', data: data, backgroundColor: '#9b5e40' }] },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: { ticks: { color: '#4a3c2e' } },
+                y: { ticks: { color: '#4a3c2e' }, beginAtZero: true }
+            }
+        }
+    });
+})();
+</script>
+{% endblock %}

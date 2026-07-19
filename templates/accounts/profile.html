@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+
+{% block page_title %}My Profile{% endblock %}
+{% block page_subtitle %}Identity, role, and access overview for the current portal account.{% endblock %}
+
+{% block content %}
+<div class="card-panel">
+    <div class="row g-4 align-items-center">
+        <div class="col-md-3">
+            <div class="profile-orb">{{ profile_user.first_name|default:profile_user.username|slice:":1"|upper }}</div>
+        </div>
+        <div class="col-md-9">
+            <h3 class="mb-2">{{ profile_user.display_name }}</h3>
+            <p class="subtle-text mb-1">Username: {{ profile_user.username }}</p>
+            <p class="subtle-text mb-1">Email: {{ profile_user.email|default:'Not configured' }}</p>
+            <p class="subtle-text mb-0">Role: {{ profile_user.get_role_display }}</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

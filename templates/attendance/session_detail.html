@@ -1,0 +1,148 @@
+{% extends 'base.html' %}
+
+{% block page_title %}Attendance Session Detail{% endblock %}
+{% block page_subtitle %}See the full class roster, not just the students who have already checked in.{% endblock %}
+{% block content %}
+<div class="row g-4">
+    <div class="col-lg-4">
+        <div class="card-panel h-100">
+            <h3>{{ session.timetable_entry.offering.course.code }}</h3>
+            <p class="subtle-text">{{ session.timetable_entry.offering.course.title }}</p>
+            {% if session.qr_image %}
+                <img src="{{ session.qr_image.url }}" alt="Attendance QR" class="qr-preview mt-3">
+            {% endif %}
+            {% if user.role == 'admin' or session.timetable_entry.offering.faculty == user %}
+                <div class="mt-3">
+                    <button id="generateQrBtn" class="btn btn-outline-secondary w-100" data-session-id="{{ session.pk }}">Generate QR (90s)</button>
+                    <p id="qrCountdown" class="subtle-text mt-2 mb-0"></p>
+                    <!-- Modal for QR display -->
+                    <div id="qrModal" class="modal" style="display:none; position:fixed; inset:0; align-items:center; justify-content:center; background:rgba(0,0,0,0.5); z-index:1000;">
+                        <div class="modal-content card-panel" style="max-width:420px; width:90%;">
+                            <button id="qrModalClose" class="btn btn-outline-secondary" style="float:right;">Close</button>
+                            <h4>Attendance QR</h4>
+                            <img id="qrModalImg" src="" alt="QR" class="qr-preview mt-2" />
+                            <p id="qrModalCountdown" class="subtle-text mt-2"></p>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+            {% if user.role == 'student' %}
+                <div class="d-grid gap-2 mt-3">
+                    <button id="startScannerBtn" class="btn btn-outline-primary w-100">Scan QR</button>
+                    <button class="btn btn-primary w-100"
+                            data-attendance-mark="true"
+                            data-qr-token="{{ session.qr_token }}">
+                        Mark My Attendance
+                    </button>
+                </div>
+                <p id="attendanceStatus" class="subtle-text mt-3 mb-0"></p>
+
+                <div id="qrScannerModal" class="modal" style="display:none; position:fixed; inset:0; align-items:center; justify-content:center; background:rgba(0,0,0,0.5); z-index:1000;">
+                    <div class="modal-content card-panel" style="max-width:520px; width:92%;">
+                        <button id="qrScannerClose" class="btn btn-outline-secondary" style="float:right;">Close</button>
+                        <h4>Scan Attendance QR</h4>
+                        <div id="qrScannerRoot" style="width:100%; min-height:320px; margin-top:1rem;"></div>
+                        <p id="scannerStatus" class="subtle-text mt-2 mb-0"></p>
+                    </div>
+                </div>
+            {% endif %}
+            <div class="detail-list">
+                <div>
+                    <span>Session Date</span>
+                    <strong>{{ session.session_date|date:"D, d M Y" }}</strong>
+                </div>
+                <div>
+                    <span>Time Slot</span>
+                    <strong>{{ session.timetable_entry.timeslot }}</strong>
+                </div>
+                <div>
+                    <span>Faculty</span>
+                    <strong>{{ session.timetable_entry.offering.faculty.display_name }}</strong>
+                </div>
+                <div>
+                    <span>Classroom</span>
+                    <strong>{{ session.timetable_entry.classroom.name|default:"Room TBA" }}</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-8">
+        <div class="card-panel h-100">
+            <div class="card-header-inline">
+                <div>
+                    <h3>Class Roster</h3>
+                    <p class="subtle-text mb-0">Every enrolled student is listed here, including the ones still waiting to be marked.</p>
+                </div>
+            </div>
+            <div class="attendance-summary-grid mb-4">
+                <div class="summary-chip">
+                    <span>Total Students</span>
+                    <strong>{{ attendance_summary.total }}</strong>
+                </div>
+                <div class="summary-chip">
+                    <span>Marked</span>
+                    <strong>{{ marked_count }}</strong>
+                </div>
+                <div class="summary-chip">
+                    <span>Present</span>
+                    <strong>{{ attendance_summary.present }}</strong>
+                </div>
+                <div class="summary-chip">
+                    <span>Pending</span>
+                    <strong>{{ attendance_summary.pending }}</strong>
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="table align-middle attendance-roster-table">
+                    <thead>
+                        <tr>
+                            <th>Student</th>
+                            <th>Roll No</th>
+                            <th>Status</th>
+                            <th>Method</th>
+                            <th>Marked At</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in roster_entries %}
+                            <tr>
+                                <td>
+                                    <strong>{{ item.student.display_name }}</strong>
+                                    <small>Section {{ item.profile.section|default:session.timetable_entry.offering.section }}{% if item.profile %} · Semester {{ item.profile.semester }}{% endif %}</small>
+                                </td>
+                                <td>{{ item.profile.student_id|default:item.student.username }}</td>
+                                <td>
+                                    {% if user.role == 'admin' or session.timetable_entry.offering.faculty == user %}
+                                        <form method="post" action="{% url 'attendance:mark_manual' session.pk item.student.pk %}" class="d-inline-block">
+                                            {% csrf_token %}
+                                            <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
+                                                <option value="pending" {% if item.status_key == 'pending' %}selected{% endif %}>Pending</option>
+                                                <option value="present" {% if item.status_key == 'present' %}selected{% endif %}>Present</option>
+                                                <option value="absent" {% if item.status_key == 'absent' %}selected{% endif %}>Absent</option>
+                                                <option value="late" {% if item.status_key == 'late' %}selected{% endif %}>Late</option>
+                                                <option value="excused" {% if item.status_key == 'excused' %}selected{% endif %}>Excused</option>
+                                            </select>
+                                        </form>
+                                    {% else %}
+                                        <span class="status-pill status-{{ item.status_key }}">{{ item.status_label }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ item.method_label }}</td>
+                                <td>
+                                    {% if item.record %}
+                                        {{ item.record.marked_at|date:"d M Y, g:i A" }}
+                                    {% else %}
+                                        <span class="subtle-text">Not marked yet</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr><td colspan="5">No enrolled students were found for this session yet.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+
+{% block page_title %}Notifications{% endblock %}
+{% block content %}
+<div class="card-panel">
+    <div class="stack-list">
+        {% for notification in notifications %}
+            <div class="stack-item">
+                <div class="d-flex justify-content-between gap-3">
+                    <div>
+                        <strong>{{ notification.title }}</strong>
+                        <p class="mb-1">{{ notification.message }}</p>
+                        <small class="subtle-text">{{ notification.created_at }}</small>
+                    </div>
+                    {% if not notification.is_read %}
+                        <a href="{% url 'notifications_app:read' notification.pk %}" class="btn btn-outline-secondary btn-sm">Mark Read</a>
+                    {% endif %}
+                </div>
+            </div>
+        {% empty %}
+            <p class="subtle-text mb-0">No notifications available.</p>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

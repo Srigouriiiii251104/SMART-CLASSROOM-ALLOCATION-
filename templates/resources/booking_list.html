@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+
+{% block page_title %}Resource Bookings{% endblock %}
+{% block content %}
+<div class="card-panel">
+    <div class="card-header-inline">
+        <h3>Booking History</h3>
+        <a href="{% url 'resources:booking_add' %}" class="btn btn-primary">New Booking</a>
+    </div>
+    <div class="table-responsive">
+        <table class="table align-middle">
+            <thead>
+                <tr>
+                    <th>Resource</th>
+                    <th>Date</th>
+                    <th>Time</th>
+                    <th>Requested By</th>
+                    <th>Purpose</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for booking in bookings %}
+                    <tr>
+                        <td>{{ booking.resource.name }}</td>
+                        <td>{{ booking.booking_date }}</td>
+                        <td>{{ booking.start_time }} - {{ booking.end_time }}</td>
+                        <td>{{ booking.requested_by.display_name }}</td>
+                        <td>{{ booking.purpose }}</td>
+                        <td>{{ booking.get_status_display }}</td>
+                    </tr>
+                {% empty %}
+                    <tr><td colspan="6">No bookings found.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

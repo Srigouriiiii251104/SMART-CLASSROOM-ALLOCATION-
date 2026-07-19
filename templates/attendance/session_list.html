@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+
+{% block page_title %}Attendance Sessions{% endblock %}
+{% block page_subtitle %}Track each class roster, see what is marked already, and spot who still needs attendance recorded.{% endblock %}
+
+{% block content %}
+<div class="summary-strip">
+    <div class="summary-chip">
+        <span>Total Sessions</span>
+        <strong>{{ session_counts.sessions }}</strong>
+    </div>
+    <div class="summary-chip">
+        <span>Marked Records</span>
+        <strong>{{ session_counts.records }}</strong>
+    </div>
+    <div class="summary-chip">
+        <span>Pending Students</span>
+        <strong>{{ session_counts.pending }}</strong>
+    </div>
+</div>
+
+<div class="card-panel">
+    <div class="card-header-inline">
+        <div>
+            <h3>Session Directory</h3>
+            <p class="subtle-text mb-0">Each session shows the roster size, attendance progress, and access methods in one place.</p>
+        </div>
+        {% if user.role != 'student' %}
+            <a href="{% url 'attendance:session_add' %}" class="btn btn-primary">Create Session</a>
+        {% endif %}
+    </div>
+    <div class="table-responsive">
+        <table class="table align-middle">
+            <thead>
+                <tr>
+                    <th>Course</th>
+                    <th>Session</th>
+                    <th>Faculty</th>
+                    <th>Roster Progress</th>
+                    <th>Modes</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for session in sessions %}
+                    <tr>
+                        <td>
+                            <strong>{{ session.timetable_entry.offering.course.code }}</strong>
+                            <small>{{ session.timetable_entry.offering.course.title }}</small>
+                        </td>
+                        <td>
+                            <strong>{{ session.session_date|date:"D, d M Y" }}</strong>
+                            <small>{{ session.timetable_entry.timeslot }}</small>
+                            <small>{{ session.timetable_entry.classroom.name|default:"Room TBA" }}</small>
+                        </td>
+                        <td>
+                            <strong>{{ session.timetable_entry.offering.faculty.display_name }}</strong>
+                            <small>Section {{ session.timetable_entry.offering.section }}</small>
+                        </td>
+                        <td>
+                            <strong>{{ session.recorded_count }} / {{ session.enrolled_count }} marked</strong>
+                            <small>{{ session.completion_rate }}% complete</small>
+                            <small>{{ session.pending_count }} still pending</small>
+                        </td>
+                        <td>
+                            <div class="attendance-status-row">
+                                <span class="status-pill {% if session.allow_qr %}status-excused{% else %}status-pending{% endif %}">QR</span>
+                                <span class="status-pill {% if session.allow_manual %}status-present{% else %}status-pending{% endif %}">Manual</span>
+                                <span class="status-pill {% if session.face_recognition_enabled %}status-late{% else %}status-pending{% endif %}">Face</span>
+                            </div>
+                        </td>
+                        <td><a href="{% url 'attendance:session_detail' session.pk %}" class="btn btn-outline-secondary btn-sm">Open Session</a></td>
+                    </tr>
+                {% empty %}
+                    <tr><td colspan="6">No attendance sessions configured.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

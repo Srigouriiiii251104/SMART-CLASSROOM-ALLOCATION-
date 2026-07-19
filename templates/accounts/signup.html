@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+
+{% block title %}Sign Up | {{ app_name }}{% endblock %}
+{% block auth_content %}
+<section class="auth-shell">
+    <div class="auth-card">
+        <div class="auth-copy">
+            <p class="eyebrow">Create a Portal Account</p>
+            <h1>{{ app_name }}</h1>
+            <p>Register as a student, teacher, or admin and get immediate access to classrooms, schedules, resources, attendance, and reports.</p>
+        </div>
+        <div class="auth-form">
+            <h2>Sign Up</h2>
+            {% if form.non_field_errors %}
+                <div class="alert alert-danger">
+                    {% for error in form.non_field_errors %}
+                        <div>{{ error }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+            <div class="role-selector" data-role-selector data-target-input="{{ form.role.id_for_label }}">
+                <button type="button" class="role-selector-button" data-role-value="student">Student</button>
+                <button type="button" class="role-selector-button" data-role-value="faculty">Teacher</button>
+                <button type="button" class="role-selector-button" data-role-value="admin">Admin</button>
+            </div>
+            <form method="post">
+                {% csrf_token %}
+                {{ form.role }}
+                <div class="row g-3">
+                    {% for field in form %}
+                        {% if field.name != 'role' %}
+                            <div class="col-md-6 {% if field.name == 'employee_id' %}role-conditional{% endif %} {% if field.name == 'student_id' or field.name == 'semester' or field.name == 'section' %}role-conditional{% endif %}"
+                                 {% if field.name == 'employee_id' %}data-role-visible="faculty"{% endif %}
+                                 {% if field.name == 'student_id' or field.name == 'semester' or field.name == 'section' %}data-role-visible="student"{% endif %}>
+                                <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                                {{ field }}
+                                {% for error in field.errors %}
+                                    <div class="text-danger small">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+                <button class="btn btn-primary w-100 mt-4" type="submit">Create Account</button>
+            </form>
+            <div class="d-flex justify-content-between mt-3">
+                <span class="subtle-text">Role-aware signup enabled</span>
+                <a href="{% url 'login' %}?role={{ selected_role }}">Already have an account?</a>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

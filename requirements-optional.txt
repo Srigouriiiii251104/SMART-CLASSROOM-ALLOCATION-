@@ -1,0 +1,5 @@
+mysqlclient
+opencv-python
+psycopg[binary]
+pyttsx3
+SpeechRecognition

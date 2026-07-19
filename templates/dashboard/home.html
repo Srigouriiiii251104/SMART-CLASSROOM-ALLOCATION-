@@ -1,0 +1,230 @@
+{% extends 'base.html' %}
+
+{% block page_title %}Operations Dashboard{% endblock %}
+{% block page_subtitle %}Live campus analytics, timetable activity, attendance signals, and exam planning snapshots.{% endblock %}
+
+{% block content %}
+{{ dashboard_metrics|json_script:"dashboard-metrics" }}
+
+<div class="stats-grid">
+    {% if user.role == 'student' %}
+        <div class="metric-card">
+            <span>Enrolled Classes</span>
+            <strong>{{ dashboard_metrics.cards.scheduled_sessions }}</strong>
+        </div>
+        <div class="metric-card">
+            <span>My Attendance Rate</span>
+            <strong>{{ dashboard_metrics.cards.attendance_rate }}%</strong>
+        </div>
+        <div class="metric-card">
+            <span>Resource Bookings</span>
+            <strong>{{ dashboard_metrics.cards.resource_bookings }}</strong>
+        </div>
+        <div class="metric-card">
+            <span>Registered Exams</span>
+            <strong>{{ dashboard_metrics.cards.exam_halls }}</strong>
+        </div>
+    {% elif user.role == 'faculty' %}
+        <div class="metric-card">
+            <span>Teaching Sessions</span>
+            <strong>{{ dashboard_metrics.cards.scheduled_sessions }}</strong>
+        </div>
+        <div class="metric-card">
+            <span>Class Attendance Rate</span>
+            <strong>{{ dashboard_metrics.cards.attendance_rate }}%</strong>
+        </div>
+        <div class="metric-card">
+            <span>Active Bookings</span>
+            <strong>{{ dashboard_metrics.cards.resource_bookings }}</strong>
+        </div>
+        <div class="metric-card">
+            <span>Exam Invigilations</span>
+            <strong>{{ dashboard_metrics.cards.exam_halls }}</strong>
+        </div>
+    {% else %}
+        <div class="metric-card">
+            <span>Total Rooms</span>
+            <strong>{{ dashboard_metrics.cards.classrooms_total }}</strong>
+        </div>
+        <div class="metric-card">
+            <span>Available Rooms</span>
+            <strong>{{ dashboard_metrics.cards.classrooms_available }}</strong>
+        </div>
+        <div class="metric-card">
+            <span>Scheduled Sessions</span>
+            <strong>{{ dashboard_metrics.cards.scheduled_sessions }}</strong>
+        </div>
+        <div class="metric-card">
+            <span>Active Exam Plans</span>
+            <strong>{{ dashboard_metrics.cards.exam_halls }}</strong>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Tabbed Analytics Panel -->
+<div class="card-panel mt-4">
+    <div class="card-header-inline align-items-center mb-3">
+        <div>
+            <h3>Campus Analytics</h3>
+            <p class="subtle-text mb-0">Interactive visual trends for timetable load, attendance, and resources.</p>
+        </div>
+        <ul class="nav nav-pills card-header-pills" id="analyticsTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="attendance-tab" data-bs-toggle="tab" data-bs-target="#attendance-pane" type="button" role="tab" aria-controls="attendance-pane" aria-selected="true">Attendance & Demand</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="occupancy-tab" data-bs-toggle="tab" data-bs-target="#occupancy-pane" type="button" role="tab" aria-controls="occupancy-pane" aria-selected="false">Classroom Occupancy</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="resources-tab" data-bs-toggle="tab" data-bs-target="#resources-pane" type="button" role="tab" aria-controls="resources-pane" aria-selected="false">Resources & Faculty</button>
+            </li>
+        </ul>
+    </div>
+    
+    <div class="tab-content" id="analyticsTabsContent">
+        <!-- Tab 1: Attendance & Demand -->
+        <div class="tab-pane fade show active" id="attendance-pane" role="tabpanel" aria-labelledby="attendance-tab">
+            <div class="row g-4">
+                <div class="col-lg-8">
+                    <h5 class="mb-3">Attendance Trend</h5>
+                    <div style="height: 250px; position: relative;">
+                        <canvas id="attendanceTrendChart"></canvas>
+                    </div>
+                </div>
+                <div class="col-lg-4">
+                    <h5 class="mb-3">Peak Utilization</h5>
+                    <div style="height: 250px; position: relative;">
+                        <canvas id="peakUsageChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Tab 2: Classroom Occupancy -->
+        <div class="tab-pane fade" id="occupancy-pane" role="tabpanel" aria-labelledby="occupancy-tab">
+            <div class="row g-4 align-items-center">
+                <div class="col-lg-7">
+                    <h5 class="mb-3">Classroom Distribution</h5>
+                    <p class="subtle-text">A doughnut breakdown of the timetable entries allocated to each active classroom.</p>
+                </div>
+                <div class="col-lg-5">
+                    <div style="height: 250px; position: relative;">
+                        <canvas id="roomOccupancyChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Tab 3: Resources & Faculty -->
+        <div class="tab-pane fade" id="resources-pane" role="tabpanel" aria-labelledby="resources-tab">
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <h5 class="mb-3">Resource Bookings</h5>
+                    <div style="height: 250px; position: relative;">
+                        <canvas id="resourceUtilizationChart"></canvas>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <h5 class="mb-3">Faculty Workload</h5>
+                    <div style="height: 250px; position: relative;">
+                        <canvas id="facultyWorkloadChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Grid for schedules, logs, and notifications -->
+<div class="row g-4 mt-2">
+    <!-- Left Column (Timetable and Attendance) -->
+    <div class="col-xl-8">
+        <div class="card-panel mb-4">
+            <div class="card-header-inline">
+                <h3>Upcoming Timetable</h3>
+                <a href="{% url 'academics:timetable_board' %}">Open board</a>
+            </div>
+            <div class="table-responsive">
+                <table class="table align-middle">
+                    <thead>
+                        <tr>
+                            <th>Course</th>
+                            <th>Time Slot</th>
+                            <th>Room</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for entry in timetable_entries %}
+                            <tr>
+                                <td>{{ entry.offering.course.code }}</td>
+                                <td>{{ entry.timeslot }}</td>
+                                <td>{{ entry.classroom.name|default:'TBA' }}</td>
+                            </tr>
+                        {% empty %}
+                            <tr><td colspan="3">No timetable entries available.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="card-panel">
+            <div class="card-header-inline">
+                <h3>Attendance Sessions</h3>
+                <a href="{% url 'attendance:session_list' %}">View all</a>
+            </div>
+            <div class="stack-list">
+                {% for session in attendance_sessions %}
+                    <div class="stack-item">
+                        <a href="{% url 'attendance:session_detail' session.pk %}" class="text-decoration-none text-dark d-block">
+                            <strong>{{ session.timetable_entry.offering.course.code }}</strong>
+                            <p>{{ session.session_date }} | QR {% if session.allow_qr %}enabled{% else %}disabled{% endif %}</p>
+                        </a>
+                    </div>
+                {% empty %}
+                    <p class="subtle-text mb-0">No attendance sessions yet.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column (Notifications and Exams) -->
+    <div class="col-xl-4">
+        <div class="card-panel mb-4">
+            <div class="card-header-inline">
+                <h3>Notifications</h3>
+                <a href="{% url 'notifications_app:list' %}">View all</a>
+            </div>
+            <div class="stack-list">
+                {% for notification in notifications %}
+                    <div class="stack-item">
+                        <strong>{{ notification.title }}</strong>
+                        <p>{{ notification.message }}</p>
+                    </div>
+                {% empty %}
+                    <p class="subtle-text mb-0">No unread notifications.</p>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="card-panel">
+            <div class="card-header-inline">
+                <h3>Exam Hall Snapshot</h3>
+                <a href="{% url 'exams:exam_list' %}">View all</a>
+            </div>
+            <div class="stack-list">
+                {% for exam in exam_schedules %}
+                    <div class="stack-item">
+                        <a href="{% url 'exams:exam_detail' exam.pk %}" class="text-decoration-none text-dark d-block">
+                            <strong>{{ exam.title }}</strong>
+                            <p>{{ exam.exam_date }} | {{ exam.start_time }} - {{ exam.end_time }}</p>
+                        </a>
+                    </div>
+                {% empty %}
+                    <p class="subtle-text mb-0">No exam hall plans generated yet.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

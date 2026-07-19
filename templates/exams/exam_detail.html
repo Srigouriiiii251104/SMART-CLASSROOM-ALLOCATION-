@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+
+{% block page_title %}Exam Detail{% endblock %}
+{% block content %}
+<div class="card-panel mb-4">
+    <div class="card-header-inline">
+        <div>
+            <h3>{{ exam.title }}</h3>
+            <p class="subtle-text">{{ exam.offering.course.code }} | {{ exam.exam_date }} | {{ exam.start_time }} - {{ exam.end_time }}</p>
+        </div>
+        {% if user.role != 'student' %}
+            <form method="post" action="{% url 'exams:allocate' exam.pk %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-primary">Allocate Halls & Seating</button>
+            </form>
+        {% endif %}
+    </div>
+</div>
+
+{% if user.role == 'student' %}
+    {% if my_seat %}
+        <div class="card-panel border-start border-4 border-success mb-4">
+            <h4 class="text-success mb-3"><i class="bi bi-info-circle-fill me-2"></i>Your Seating Assignment</h4>
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <span class="subtle-text d-block">Room / Classroom</span>
+                    <strong>{{ my_seat.classroom.name }}</strong>
+                </div>
+                <div class="col-md-3">
+                    <span class="subtle-text d-block">Building / Block</span>
+                    <strong>{{ my_seat.classroom.building|default:"Main Block" }}</strong>
+                </div>
+                <div class="col-md-2">
+                    <span class="subtle-text d-block">Floor</span>
+                    <strong>Floor {{ my_seat.classroom.floor|default:"0" }}</strong>
+                </div>
+                <div class="col-md-2">
+                    <span class="subtle-text d-block">Seat Number</span>
+                    <span class="badge bg-success fs-6">{{ my_seat.seat_number }}</span>
+                </div>
+                <div class="col-md-2">
+                    <span class="subtle-text d-block">Exam Date & Timings</span>
+                    <strong>{{ exam.exam_date }} · {{ exam.start_time|time:"g:i A" }} - {{ exam.end_time|time:"g:i A" }}</strong>
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <div class="alert alert-warning card-panel mb-4">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i> Seating assignments are not yet generated or you are not registered for a seat in this exam.
+        </div>
+    {% endif %}
+{% endif %}
+
+<div class="row g-4">
+    <div class="col-lg-5">
+        <div class="card-panel h-100">
+            <h3>Hall Allocation</h3>
+            <div class="stack-list">
+                {% for allocation in exam.hall_allocations.all %}
+                    <div class="stack-item">
+                        <strong>{{ allocation.classroom.name }}</strong>
+                        <p>{{ allocation.allocated_students }} students</p>
+                    </div>
+                {% empty %}
+                    <p class="subtle-text mb-0">No halls allocated yet.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-7">
+        <div class="card-panel h-100">
+            <h3>Invigilators</h3>
+            <div class="stack-list">
+                {% for invigilator in exam.invigilator_assignments.all %}
+                    <div class="stack-item">
+                        <strong>{{ invigilator.faculty.display_name }}</strong>
+                        <p>{{ invigilator.classroom.name }}</p>
+                    </div>
+                {% empty %}
+                    <p class="subtle-text mb-0">Invigilators will be assigned during hall allocation.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    <div class="col-12">
+        <div class="card-panel">
+            <h3>Seating Chart</h3>
+            <div class="table-responsive">
+                <table class="table align-middle">
+                    <thead>
+                        <tr>
+                            <th>Student</th>
+                            <th>Hall</th>
+                            <th>Seat Number</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for seat in exam.seating_assignments.all %}
+                            <tr>
+                                <td>{{ seat.student.display_name }}</td>
+                                <td>{{ seat.classroom.name }}</td>
+                                <td>{{ seat.seat_number }}</td>
+                            </tr>
+                        {% empty %}
+                            <tr><td colspan="3">No seating assignments generated yet.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

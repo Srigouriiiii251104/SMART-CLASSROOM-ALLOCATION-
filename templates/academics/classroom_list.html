@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+
+{% block page_title %}Classroom Inventory{% endblock %}
+{% block page_subtitle %}Manage room capacity, smart classroom capabilities, and QR-enabled access points.{% endblock %}
+
+{% block content %}
+<div class="card-panel">
+    <div class="card-header-inline">
+        <h3>Room Directory</h3>
+        {% if user.role == 'admin' %}
+            <a href="{% url 'academics:classroom_add' %}" class="btn btn-primary">Add Classroom</a>
+        {% endif %}
+    </div>
+    <div class="table-responsive">
+        <table class="table align-middle">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Building</th>
+                    <th>Capacity</th>
+                    <th>Features</th>
+                    <th>Status</th>
+                    <th>QR</th>
+                    {% if user.role == 'admin' %}<th>Actions</th>{% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for classroom in classrooms %}
+                    <tr>
+                        <td>{{ classroom.name }}</td>
+                        <td>{{ classroom.building }}</td>
+                        <td>{{ classroom.capacity }}</td>
+                        <td>{{ classroom.feature_summary }}</td>
+                        <td><span class="badge text-bg-secondary">{{ classroom.get_status_display }}</span></td>
+                        <td>
+                            {% if classroom.qr_image %}
+                                <img src="{{ classroom.qr_image.url }}" alt="{{ classroom.name }} QR" class="qr-thumb">
+                            {% else %}
+                                Pending
+                            {% endif %}
+                        </td>
+                        {% if user.role == 'admin' %}
+                            <td class="d-flex gap-2">
+                                <a href="{% url 'academics:classroom_edit' classroom.pk %}" class="btn btn-outline-secondary btn-sm">Edit</a>
+                                <a href="{% url 'academics:classroom_delete' classroom.pk %}" class="btn btn-outline-danger btn-sm">Delete</a>
+                            </td>
+                        {% endif %}
+                    </tr>
+                {% empty %}
+                    <tr><td colspan="7">No classrooms have been created yet.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

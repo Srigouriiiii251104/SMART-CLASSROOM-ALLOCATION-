@@ -1,0 +1,141 @@
+{% extends 'base.html' %}
+
+{% block page_title %}Weekly Timetable{% endblock %}
+{% block page_subtitle %}A clearer weekly board for rooms, slots, and class flow across the active term.{% endblock %}
+
+{% block content %}
+<div class="card-panel mb-4">
+    <div class="card-header-inline">
+        <div>
+            <h3>{% if term %}{{ term.name }}{% else %}No active term{% endif %}</h3>
+            <p class="subtle-text">Each cell maps one classroom to one teaching slot, with a weekly list alongside it.</p>
+        </div>
+        {% if can_manage_timetable %}
+            <form method="post" action="{% url 'academics:timetable_generate' %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-primary">Regenerate Timetable</button>
+            </form>
+        {% endif %}
+    </div>
+    <div class="summary-strip">
+        <div class="summary-chip">
+            <span>Active Rooms</span>
+            <strong>{{ classrooms|length }}</strong>
+        </div>
+        <div class="summary-chip">
+            <span>Time Slots</span>
+            <strong>{{ timeslots|length }}</strong>
+        </div>
+        <div class="summary-chip">
+            <span>Scheduled Sessions</span>
+            <strong>{{ entries|length }}</strong>
+        </div>
+        <div class="summary-chip">
+            <span>Weekly View</span>
+            <strong>{{ weekly_schedule|length }} days</strong>
+        </div>
+    </div>
+    {% if not can_manage_timetable %}
+        <div class="board-note">
+            <p>This board is read-only for students. Your own classes are listed in the weekly schedule panel.</p>
+        </div>
+    {% endif %}
+
+    {% if conflicts %}
+        <div class="alert alert-warning mt-3">
+            <strong>Conflict Monitor:</strong>
+            {% for conflict in conflicts %}
+                <div>{{ conflict.message }}</div>
+            {% endfor %}
+        </div>
+    {% endif %}
+    <p id="timetableStatus" class="subtle-text mb-0 mt-3"></p>
+</div>
+
+<div class="row g-4">
+    <div class="col-xl-8">
+        <div class="card-panel timetable-panel h-100">
+            <div class="table-responsive">
+                <table class="table timetable-grid align-middle" data-timetable-board="true" data-can-manage="{{ can_manage_timetable|yesno:'true,false' }}">
+                    <thead>
+                        <tr>
+                            <th>Time Slot</th>
+                            {% for classroom in classrooms %}
+                                <th>{{ classroom.name }}<br><small>{{ classroom.feature_summary }}</small></th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in board_rows %}
+                            <tr>
+                                <td class="timeslot-column">
+                                    <strong>{{ row.timeslot.get_day_of_week_display }}</strong>
+                                    <span>{{ row.timeslot.start_time }} - {{ row.timeslot.end_time }}</span>
+                                    {% if row.timeslot.label %}
+                                        <small>{{ row.timeslot.label }}</small>
+                                    {% endif %}
+                                </td>
+                                {% for cell in row.cells %}
+                                    <td class="drop-cell"
+                                        data-timeslot-id="{{ row.timeslot.id }}"
+                                        data-classroom-id="{{ cell.classroom.id }}">
+                                        {% if cell.entry %}
+                                            <div class="schedule-chip {% if can_manage_timetable %}is-draggable{% endif %}"
+                                                 draggable="{{ can_manage_timetable|yesno:'true,false' }}"
+                                                 data-entry-id="{{ cell.entry.id }}">
+                                                <strong>{{ cell.entry.offering.course.code }}</strong>
+                                                <span>{{ cell.entry.offering.course.title }}</span>
+                                                <small>{{ cell.entry.offering.faculty.display_name }} · {{ cell.entry.get_session_type_display }}</small>
+                                            </div>
+                                        {% else %}
+                                            <span class="empty-slot">{% if can_manage_timetable %}Drop session here{% else %}Open slot{% endif %}</span>
+                                        {% endif %}
+                                    </td>
+                                {% endfor %}
+                            </tr>
+                        {% empty %}
+                            <tr><td colspan="{{ classrooms|length|add:1 }}">No time slots configured yet.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-4">
+        <div class="card-panel h-100">
+            <div class="card-header-inline">
+                <div>
+                    <h3>Weekly Breakdown</h3>
+                    <p class="subtle-text">
+                        {% if user.role == 'student' %}
+                            Your enrolled classes for the current term.
+                        {% elif user.role == 'faculty' %}
+                            Your teaching slots for the current term.
+                        {% else %}
+                            A day-by-day view of scheduled classes.
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+            <div class="week-columns">
+                {% for day in weekly_schedule %}
+                    <div class="day-card">
+                        <h4>{{ day.label }}</h4>
+                        <div class="day-list">
+                            {% for entry in day.entries %}
+                                <div class="day-item">
+                                    <strong>{{ entry.timeslot.start_time|time:"g:i A" }} · {{ entry.offering.course.code }}</strong>
+                                    <span>{{ entry.offering.course.title }}</span>
+                                    <small>{{ entry.classroom.name|default:"Room TBA" }} · {{ entry.offering.faculty.display_name }}</small>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% empty %}
+                    <p class="subtle-text mb-0">No timetable entries are available for this view yet.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

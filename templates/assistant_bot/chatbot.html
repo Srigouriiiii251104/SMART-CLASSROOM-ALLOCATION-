@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+
+{% block page_title %}AI Chat Assistant{% endblock %}
+{% block page_subtitle %}Ask about free classrooms, your timetable, attendance, or resource availability.{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-xl-8">
+        <div class="card-panel chat-shell">
+            <div id="chatWindow" class="chat-window">
+                <div class="chat-bubble assistant">
+                    I can answer queries like "show free classrooms", "show my timetable", or "resource availability".
+                </div>
+            </div>
+            <form id="chatbotForm" class="chat-form">
+                <div class="input-group">
+                    <input type="text" class="form-control" name="query" id="chatQuery" placeholder="Ask the campus assistant..." required>
+                    <button type="button" id="voiceInputBtn" class="btn btn-outline-secondary">
+                        <i class="bi bi-mic-fill"></i>
+                    </button>
+                    <button type="submit" class="btn btn-primary">Send</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

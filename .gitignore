@@ -1,0 +1,14 @@
+.env
+.venv/
+__pycache__/
+*.pyc
+*.sqlite3
+media/
+staticfiles/
+*.sqlite3-journal
+*.sqlite3-journal.*
+*.bak
+*.log
+*.jpeg
+*.jpg
+*.png

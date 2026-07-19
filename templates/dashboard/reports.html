@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+
+{% block page_title %}Report Center{% endblock %}
+{% block page_subtitle %}Generate downloadable PDFs for timetables, attendance, exams, and resource usage.{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <div class="col-md-6 col-xl-3">
+        <a class="report-card" href="{% url 'reports:timetable' %}">
+            <i class="bi bi-calendar3"></i>
+            <h3>Timetable PDF</h3>
+            <p>Faculty, student, and room allocation schedule export.</p>
+        </a>
+    </div>
+    <div class="col-md-6 col-xl-3">
+        <a class="report-card" href="{% url 'reports:attendance' %}">
+            <i class="bi bi-clipboard-data"></i>
+            <h3>Attendance PDF</h3>
+            <p>Session-level attendance analytics and status records.</p>
+        </a>
+    </div>
+    <div class="col-md-6 col-xl-3">
+        <a class="report-card" href="{% url 'reports:exam' %}">
+            <i class="bi bi-journal-richtext"></i>
+            <h3>Exam Seating PDF</h3>
+            <p>Hall allocation and seating chart export for invigilation.</p>
+        </a>
+    </div>
+    <div class="col-md-6 col-xl-3">
+        <a class="report-card" href="{% url 'reports:resource' %}">
+            <i class="bi bi-pie-chart"></i>
+            <h3>Resource Usage PDF</h3>
+            <p>Projectors, labs, and equipment activity summary.</p>
+        </a>
+    </div>
+</div>
+{% endblock %}
